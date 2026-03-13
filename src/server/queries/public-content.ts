@@ -5,214 +5,267 @@ export type ArchiveSort = "recent" | "events" | "stocks";
 export type SearchScope = "all" | "reports" | "events" | "stocks";
 export type SearchSort = "relevance" | "latest";
 
+function logPublicDataFallback(scope: string, error: unknown) {
+  console.warn(`[public-content] Falling back in ${scope}.`, error);
+}
+
+async function withPublicDataFallback<T>(
+  scope: string,
+  action: () => Promise<T>,
+  fallback: T
+) {
+  try {
+    return await action();
+  } catch (error) {
+    logPublicDataFallback(scope, error);
+    return fallback;
+  }
+}
+
 export async function getSiteNavigationData() {
-  const reports = await prisma.dailyReport.findMany({
-    where: {
-      status: "PUBLISHED"
-    },
-    orderBy: {
-      marketDate: "desc"
-    },
-    take: 12,
-    include: {
-      events: {
+  return withPublicDataFallback(
+    "getSiteNavigationData",
+    async () => {
+      const reports = await prisma.dailyReport.findMany({
+        where: {
+          status: "PUBLISHED"
+        },
+        orderBy: {
+          marketDate: "desc"
+        },
+        take: 12,
         include: {
-          event: true
+          events: {
+            include: {
+              event: true
+            }
+          }
+        }
+      });
+
+      const sectorCounts = new Map<string, number>();
+
+      for (const report of reports) {
+        for (const link of report.events) {
+          for (const sector of link.event.sectors) {
+            sectorCounts.set(sector, (sectorCounts.get(sector) ?? 0) + 1);
+          }
         }
       }
+
+      return {
+        latestReportDateLabel: reports[0]?.marketDate
+          ? reports[0].marketDate.toISOString().slice(0, 10)
+          : "No published edition",
+        recentReports: reports.slice(0, 6).map((report) => ({
+          slug: report.slug,
+          title: report.title,
+          marketDate: report.marketDate,
+          marketDateIso: toIsoMarketDate(report.marketDate)
+        })),
+        topSectors: [...sectorCounts.entries()]
+          .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+          .slice(0, 6)
+          .map(([label, count]) => ({
+            label,
+            slug: slugifyTopic(label),
+            count
+          }))
+      };
+    },
+    {
+      latestReportDateLabel: "No published edition",
+      recentReports: [],
+      topSectors: []
     }
-  });
-
-  const sectorCounts = new Map<string, number>();
-
-  for (const report of reports) {
-    for (const link of report.events) {
-      for (const sector of link.event.sectors) {
-        sectorCounts.set(sector, (sectorCounts.get(sector) ?? 0) + 1);
-      }
-    }
-  }
-
-  return {
-    latestReportDateLabel: reports[0]?.marketDate
-      ? reports[0].marketDate.toISOString().slice(0, 10)
-      : "No published edition",
-    recentReports: reports.slice(0, 6).map((report) => ({
-      slug: report.slug,
-      title: report.title,
-      marketDate: report.marketDate,
-      marketDateIso: toIsoMarketDate(report.marketDate)
-    })),
-    topSectors: [...sectorCounts.entries()]
-      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-      .slice(0, 6)
-      .map(([label, count]) => ({
-        label,
-        slug: slugifyTopic(label),
-        count
-      }))
-  };
+  );
 }
 
 export async function getPublishedReportByDate(marketDateIso: string) {
   const start = new Date(`${marketDateIso}T00:00:00.000Z`);
   const end = new Date(`${marketDateIso}T23:59:59.999Z`);
 
-  return prisma.dailyReport.findFirst({
-    where: {
-      status: "PUBLISHED",
-      marketDate: {
-        gte: start,
-        lte: end
-      }
-    },
-    include: {
-      events: {
-        include: {
-          event: true
+  return withPublicDataFallback(
+    "getPublishedReportByDate",
+    async () =>
+      prisma.dailyReport.findFirst({
+        where: {
+          status: "PUBLISHED",
+          marketDate: {
+            gte: start,
+            lte: end
+          }
         },
-        orderBy: {
-          sortOrder: "asc"
+        include: {
+          events: {
+            include: {
+              event: true
+            },
+            orderBy: {
+              sortOrder: "asc"
+            }
+          },
+          stockFocuses: true
         }
-      },
-      stockFocuses: true
-    }
-  });
+      }),
+    null
+  );
 }
 
 export async function getTopicPageData(topicSlug: string) {
-  const reports = await prisma.dailyReport.findMany({
-    where: {
-      status: "PUBLISHED"
-    },
-    orderBy: {
-      marketDate: "desc"
-    },
-    take: 20,
-    include: {
-      events: {
-        include: {
-          event: true
+  return withPublicDataFallback(
+    "getTopicPageData",
+    async () => {
+      const reports = await prisma.dailyReport.findMany({
+        where: {
+          status: "PUBLISHED"
         },
         orderBy: {
-          sortOrder: "asc"
+          marketDate: "desc"
+        },
+        take: 20,
+        include: {
+          events: {
+            include: {
+              event: true
+            },
+            orderBy: {
+              sortOrder: "asc"
+            }
+          },
+          stockFocuses: true
         }
-      },
-      stockFocuses: true
-    }
-  });
+      });
 
-  const matchingReports = reports
-    .map((report) => {
-      const matchingEvents = report.events.filter((link) =>
-        link.event.sectors.some((sector) => slugifyTopic(sector) === topicSlug)
-      );
+      const matchingReports = reports
+        .map((report) => {
+          const matchingEvents = report.events.filter((link) =>
+            link.event.sectors.some((sector) => slugifyTopic(sector) === topicSlug)
+          );
 
-      if (matchingEvents.length === 0) {
-        return null;
-      }
+          if (matchingEvents.length === 0) {
+            return null;
+          }
+
+          return {
+            ...report,
+            matchingEvents
+          };
+        })
+        .filter((report): report is NonNullable<typeof report> => Boolean(report));
+
+      const topicLabel =
+        matchingReports[0]?.matchingEvents[0]?.event.sectors.find(
+          (sector) => slugifyTopic(sector) === topicSlug
+        ) ?? null;
+
+      const relatedStocks = Array.from(
+        new Map(
+          matchingReports
+            .flatMap((report) => report.stockFocuses)
+            .map((focus) => [focus.symbol, focus])
+        ).values()
+      ).slice(0, 6);
 
       return {
-        ...report,
-        matchingEvents
+        topicLabel,
+        reports: matchingReports,
+        relatedStocks
       };
-    })
-    .filter((report): report is NonNullable<typeof report> => Boolean(report));
-
-  const topicLabel =
-    matchingReports[0]?.matchingEvents[0]?.event.sectors.find(
-      (sector) => slugifyTopic(sector) === topicSlug
-    ) ?? null;
-
-  const relatedStocks = Array.from(
-    new Map(
-      matchingReports
-        .flatMap((report) => report.stockFocuses)
-        .map((focus) => [focus.symbol, focus])
-    ).values()
-  ).slice(0, 6);
-
-  return {
-    topicLabel,
-    reports: matchingReports,
-    relatedStocks
-  };
+    },
+    {
+      topicLabel: null,
+      reports: [],
+      relatedStocks: []
+    }
+  );
 }
 
 export async function getLatestPublishedReport() {
-  return prisma.dailyReport.findFirst({
-    where: {
-      status: "PUBLISHED"
-    },
-    orderBy: {
-      marketDate: "desc"
-    },
-    include: {
-      events: {
+  return withPublicDataFallback(
+    "getLatestPublishedReport",
+    async () =>
+      prisma.dailyReport.findFirst({
+        where: {
+          status: "PUBLISHED"
+        },
         orderBy: {
-          sortOrder: "asc"
+          marketDate: "desc"
         },
         include: {
-          event: true
+          events: {
+            orderBy: {
+              sortOrder: "asc"
+            },
+            include: {
+              event: true
+            }
+          },
+          stockFocuses: true,
+          manualEdits: {
+            orderBy: {
+              createdAt: "desc"
+            },
+            take: 1
+          }
         }
-      },
-      stockFocuses: true,
-      manualEdits: {
-        orderBy: {
-          createdAt: "desc"
-        },
-        take: 1
-      }
-    }
-  });
+      }),
+    null
+  );
 }
 
 export async function getPublishedReports(
   limit = 30,
   sort: ArchiveSort = "recent"
 ) {
-  const reports = await prisma.dailyReport.findMany({
-    where: {
-      status: "PUBLISHED"
-    },
-    orderBy: {
-      marketDate: "desc"
-    },
-    take: limit,
-    include: {
-      events: {
-        include: {
-          event: true
+  return withPublicDataFallback(
+    "getPublishedReports",
+    async () => {
+      const reports = await prisma.dailyReport.findMany({
+        where: {
+          status: "PUBLISHED"
         },
         orderBy: {
-          sortOrder: "asc"
+          marketDate: "desc"
+        },
+        take: limit,
+        include: {
+          events: {
+            include: {
+              event: true
+            },
+            orderBy: {
+              sortOrder: "asc"
+            }
+          },
+          stockFocuses: true
         }
-      },
-      stockFocuses: true
-    }
-  });
+      });
 
-  const sortedReports = [...reports];
+      const sortedReports = [...reports];
 
-  if (sort === "events") {
-    sortedReports.sort((left, right) => {
-      return (
-        right.events.length - left.events.length ||
-        right.marketDate.getTime() - left.marketDate.getTime()
-      );
-    });
-  }
+      if (sort === "events") {
+        sortedReports.sort((left, right) => {
+          return (
+            right.events.length - left.events.length ||
+            right.marketDate.getTime() - left.marketDate.getTime()
+          );
+        });
+      }
 
-  if (sort === "stocks") {
-    sortedReports.sort((left, right) => {
-      return (
-        right.stockFocuses.length - left.stockFocuses.length ||
-        right.marketDate.getTime() - left.marketDate.getTime()
-      );
-    });
-  }
+      if (sort === "stocks") {
+        sortedReports.sort((left, right) => {
+          return (
+            right.stockFocuses.length - left.stockFocuses.length ||
+            right.marketDate.getTime() - left.marketDate.getTime()
+          );
+        });
+      }
 
-  return sortedReports;
+      return sortedReports;
+    },
+    []
+  );
 }
 
 export async function getReportBySlug(slug: string) {
