@@ -216,6 +216,7 @@ Build a public-facing AI finance analysis platform that publishes a daily pre-ma
 - After adding the new Prisma `AutomationSetting` model, local `next dev` needed a full restart to pick up the regenerated Prisma client; otherwise `/admin` could throw a stale-runtime `automationSetting.findUnique` error even though type-check and build were already green.
 - Reworked the production deployment plan around free-tier constraints: removed the Vercel cron dependency, added a GitHub Actions scheduler workflow that hits the protected cron route every 5 minutes, updated the README deployment instructions, and tightened `.gitignore` so `.env.dev` will not leak when the repository is published.
 - Added a separate GitHub Actions CI workflow for push/PR validation plus a deployment checklist document, so the newly pushed public repository is ready for cloud setup and ongoing free-tier scheduling without relying on local machine state.
+- Fixed a cloud-only TypeScript issue on `/admin` by explicitly typing the dashboard array callback parameters in `src/app/admin/page.tsx`, which prevented Vercel from failing on an implicit-`any` build error even though the local environment had previously been more permissive.
 
 ### Decisions Made
 

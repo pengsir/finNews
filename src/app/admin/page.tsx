@@ -116,8 +116,12 @@ export default async function AdminDashboardPage({
 
   const params = searchParams ? await searchParams : undefined;
   const activeTab = getActiveTab(params?.tab);
+  const dashboardData = await getAdminDashboardData();
   const { adminUser, aiConfigs, sources, reports, recentFeedback, recentJobs, totals, automationSetting } =
-    await getAdminDashboardData();
+    dashboardData;
+  type AiConfig = (typeof aiConfigs)[number];
+  type Source = (typeof sources)[number];
+  type Job = (typeof recentJobs)[number];
   const jobStatusFilter = params?.jobStatus ?? "all";
   const jobProviderFilter = params?.jobProvider ?? "all";
   const aiProviderFilter = params?.aiProvider ?? "all";
@@ -127,21 +131,21 @@ export default async function AdminDashboardPage({
   const runStatus = params?.run;
   const runMessage = params?.message;
   const scheduleStatus = params?.schedule;
-  const runningJob = recentJobs.find((job) => job.status === "RUNNING") ?? null;
+  const runningJob = recentJobs.find((job: Job) => job.status === "RUNNING") ?? null;
   const isJobRunning = Boolean(runningJob);
-  const activeAiConfig = aiConfigs.find((config) => config.isActive) ?? null;
+  const activeAiConfig = aiConfigs.find((config: AiConfig) => config.isActive) ?? null;
   const latestJob = recentJobs[0] ?? null;
-  const filteredJobs = recentJobs.filter((job) => {
+  const filteredJobs = recentJobs.filter((job: Job) => {
     const statusPass = jobStatusFilter === "all" || job.status === jobStatusFilter;
     const providerPass =
       jobProviderFilter === "all" || (job.aiProvider ?? "unknown") === jobProviderFilter;
 
     return statusPass && providerPass;
   });
-  const filteredAiConfigs = aiConfigs.filter((config) => {
+  const filteredAiConfigs = aiConfigs.filter((config: AiConfig) => {
     return aiProviderFilter === "all" || config.provider === aiProviderFilter;
   });
-  const filteredSources = sources.filter((source) => {
+  const filteredSources = sources.filter((source: Source) => {
     const statusPass =
       sourceStatusFilter === "all" ||
       (sourceStatusFilter === "active" && source.isActive) ||
@@ -150,9 +154,9 @@ export default async function AdminDashboardPage({
 
     return statusPass && typePass;
   });
-  const jobProviders = Array.from(new Set(recentJobs.map((job) => job.aiProvider).filter(Boolean)));
-  const aiProviders = Array.from(new Set(aiConfigs.map((config) => config.provider)));
-  const sourceTypes = Array.from(new Set(sources.map((source) => source.sourceType)));
+  const jobProviders = Array.from(new Set(recentJobs.map((job: Job) => job.aiProvider).filter(Boolean)));
+  const aiProviders = Array.from(new Set(aiConfigs.map((config: AiConfig) => config.provider)));
+  const sourceTypes = Array.from(new Set(sources.map((source: Source) => source.sourceType)));
 
   return (
     <main className="page-shell">
