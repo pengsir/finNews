@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db/prisma";
 import { getAiClient } from "@/server/ai/get-client";
 import { getAiRuntimeConfig } from "@/server/ai/provider-config";
@@ -305,6 +306,12 @@ async function executeDailyPipelineJob({
         metadataJson: JSON.stringify(result)
       }
     });
+
+    revalidatePath("/");
+    revalidatePath("/archive");
+    revalidatePath(`/reports/${reportSlug}`);
+    revalidatePath(`/editions/${marketDate.toISOString().slice(0, 10)}`);
+    revalidatePath("/search");
 
     return result;
   } catch (error) {
