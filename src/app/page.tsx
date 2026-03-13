@@ -70,7 +70,7 @@ export default async function HomePage() {
               <h2>What is driving the current mock pre-market brief.</h2>
             </div>
             <div className="stack-list">
-              {latestReport.events.map((link: (typeof latestReport.events)[number], index) => (
+              {latestReport.events.map((link: (typeof latestReport.events)[number], index: number) => (
                 <article className="list-card" key={link.event.id}>
                   <div className="list-card-topline">
                     <span>#{index + 1}</span>

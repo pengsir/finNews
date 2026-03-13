@@ -21,7 +21,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
   type MatchingEventLink = (typeof topic.reports)[number]["matchingEvents"][number];
   type RelatedStock = (typeof topic.relatedStocks)[number];
   const totalEventCount = topic.reports.reduce(
-    (sum, report) => sum + report.matchingEvents.length,
+    (sum: number, report: TopicReport) => sum + report.matchingEvents.length,
     0
   );
   const totalImportance = topic.reports.reduce(
