@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "node scripts/with-env-dev.mjs next dev",
     "build": "node scripts/with-env-dev.mjs next build",
     "start": "node scripts/with-env-dev.mjs next start",
