@@ -219,6 +219,7 @@ Build a public-facing AI finance analysis platform that publishes a daily pre-ma
 - Fixed a cloud-only TypeScript issue on `/admin` by explicitly typing the dashboard array callback parameters in `src/app/admin/page.tsx`, which prevented Vercel from failing on an implicit-`any` build error even though the local environment had previously been more permissive.
 - Continued hardening `/admin` for cloud builds by typing the remaining callback/nullability edges around `recentJobs`, `jobProviders`, and filtered lists, so Vercel no longer catches additional implicit-`any` or nullable callback mismatches one line at a time.
 - Explicitly cast the derived `aiProviders` and `sourceTypes` collections in `/admin` to `string[]`, because Vercel's build-time TypeScript inference treated the raw `Array.from(new Set(...))` results as `unknown[]` and rejected the typed `map` callbacks.
+- Performed a broader page-layer callback typing sweep across the public routes and shared shell components, explicitly typing list-rendering and primitive-array callbacks (`sectors`, `tickers`, report/event links, schedule options, etc.) so the project no longer relies on route-specific inference that only showed up during Vercel builds.
 
 ### Decisions Made
 

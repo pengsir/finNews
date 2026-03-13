@@ -20,6 +20,7 @@ export default async function StockPage({ params }: StockPageProps) {
 
   const latestEntry = stockEntries[0];
   type ReportEventLink = (typeof latestEntry.report.events)[number];
+  type StockEntry = (typeof stockEntries)[number];
 
   return (
     <main className="page-shell">
@@ -40,7 +41,7 @@ export default async function StockPage({ params }: StockPageProps) {
           <h2>Where this symbol appears in the seeded market brief archive.</h2>
         </div>
         <div className="stack-list">
-          {stockEntries.map((entry) => (
+          {stockEntries.map((entry: StockEntry) => (
             <article className="list-card" key={entry.id}>
               <div className="list-card-topline">
                 <span>{formatMarketDate(entry.report.marketDate)}</span>

@@ -8,7 +8,7 @@ import { getReportBySlug } from "@/server/queries/public-content";
 function parseReportContent(content: string) {
   const paragraphs = content
     .split("\n\n")
-    .map((paragraph) => paragraph.trim())
+    .map((paragraph: string) => paragraph.trim())
     .filter(Boolean);
 
   const evidenceIndex = paragraphs.findIndex((paragraph) =>
@@ -24,14 +24,16 @@ function parseReportContent(content: string) {
 
   return {
     narrative: paragraphs.slice(0, evidenceIndex),
-    evidenceLines: paragraphs.slice(evidenceIndex + 1).filter((paragraph) => paragraph.startsWith("- "))
+    evidenceLines: paragraphs
+      .slice(evidenceIndex + 1)
+      .filter((paragraph: string) => paragraph.startsWith("- "))
   };
 }
 
 function splitDetailLines(content: string | null) {
   return (content ?? "")
     .split("\n")
-    .map((line) => line.trim())
+    .map((line: string) => line.trim())
     .filter(Boolean);
 }
 
@@ -52,6 +54,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
   type ReportEventLink = (typeof report.events)[number];
   type EventSourceLink = (typeof report.events)[number]["event"]["sources"][number];
   type StockFocus = (typeof report.stockFocuses)[number];
+  type NarrativeLine = string;
   const parsedContent = parseReportContent(report.contentZhEn);
   const sectorLines = splitDetailLines(report.sectorView);
   const tradingLines = splitDetailLines(report.tradingView);
@@ -78,7 +81,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
           <article className="feature-card">
             <p className="eyebrow">Bilingual brief</p>
             <div className="prose-block">
-              {parsedContent.narrative.map((paragraph) => (
+              {parsedContent.narrative.map((paragraph: NarrativeLine) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
@@ -92,7 +95,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
             <div className="detail-card">
               <p className="eyebrow">Sector view</p>
               <div className="detail-list">
-                {(sectorLines.length > 0 ? sectorLines : ["Not generated yet."]).map((line) => (
+                {(sectorLines.length > 0 ? sectorLines : ["Not generated yet."]).map((line: string) => (
                   <p key={line}>{line}</p>
                 ))}
               </div>
@@ -100,7 +103,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
             <div className="detail-card">
               <p className="eyebrow">Trading view</p>
               <div className="detail-list">
-                {(tradingLines.length > 0 ? tradingLines : ["Not generated yet."]).map((line) => (
+                {(tradingLines.length > 0 ? tradingLines : ["Not generated yet."]).map((line: string) => (
                   <p key={line}>{line}</p>
                 ))}
               </div>
@@ -108,7 +111,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
             <div className="detail-card">
               <p className="eyebrow">Risk warning</p>
               <div className="detail-list detail-list-caution">
-                {riskLines.map((line) => (
+                {riskLines.map((line: string) => (
                   <p key={line}>{line}</p>
                 ))}
               </div>
@@ -116,7 +119,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
             <div className="detail-card">
               <p className="eyebrow">Disclaimer</p>
               <div className="detail-list">
-                {disclaimerLines.map((line) => (
+                {disclaimerLines.map((line: string) => (
                   <p key={line}>{line}</p>
                 ))}
               </div>
@@ -132,7 +135,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
             <h2>Source lines fed into the generated draft.</h2>
           </div>
           <div className="stack-list">
-            {parsedContent.evidenceLines.map((line) => (
+            {parsedContent.evidenceLines.map((line: string) => (
               <article className="evidence-line-card" key={line}>
                 <p>{line.replace(/^- /, "")}</p>
               </article>
@@ -157,7 +160,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
               <h3>{link.event.title}</h3>
               <p>{link.event.summary}</p>
               <div className="tag-row">
-                {link.event.tickers.map((ticker) => (
+                {link.event.tickers.map((ticker: string) => (
                   <span className="tag" key={ticker}>
                     {ticker}
                   </span>

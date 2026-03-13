@@ -25,14 +25,17 @@ export default async function TopicPage({ params }: TopicPageProps) {
     0
   );
   const totalImportance = topic.reports.reduce(
-    (sum, report) =>
+    (sum, report: (typeof topic.reports)[number]) =>
       sum +
-      report.matchingEvents.reduce((eventSum, link) => eventSum + link.event.importanceScore, 0),
+      report.matchingEvents.reduce(
+        (eventSum, link: (typeof report.matchingEvents)[number]) => eventSum + link.event.importanceScore,
+        0
+      ),
     0
   );
   const averageImportance =
     totalEventCount > 0 ? (totalImportance / totalEventCount).toFixed(1) : "0.0";
-  const recentDates = topic.reports.slice(0, 3).map((report) => ({
+  const recentDates = topic.reports.slice(0, 3).map((report: (typeof topic.reports)[number]) => ({
     label: formatMarketDate(report.marketDate),
     date: toIsoMarketDate(report.marketDate)
   }));
@@ -73,7 +76,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
           <article className="detail-card">
             <p className="eyebrow">Recent editions</p>
             <div className="summary-stack">
-              {recentDates.map((edition) => (
+              {recentDates.map((edition: (typeof recentDates)[number]) => (
                 <Link
                   className="summary-chip"
                   href={`/editions/${edition.date}`}

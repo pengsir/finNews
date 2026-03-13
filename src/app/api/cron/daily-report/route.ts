@@ -15,7 +15,7 @@ function getEasternParts(date = new Date()) {
   });
 
   const parts = formatter.formatToParts(date);
-  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const values = Object.fromEntries(parts.map((part: Intl.DateTimeFormatPart) => [part.type, part.value]));
 
   return {
     year: Number.parseInt(values.year, 10),

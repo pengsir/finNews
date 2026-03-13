@@ -6,6 +6,8 @@ import { getSiteNavigationData } from "@/server/queries/public-content";
 
 export async function SiteShell({ children }: { children: ReactNode }) {
   const navigation = await getSiteNavigationData();
+  type RecentReport = (typeof navigation.recentReports)[number];
+  type TopSector = (typeof navigation.topSectors)[number];
 
   return (
     <div className="site-frame">
@@ -17,12 +19,12 @@ export async function SiteShell({ children }: { children: ReactNode }) {
           { href: "/search" as Route, label: "Search" },
           { href: "/admin" as Route, label: "Admin Desk" }
         ]}
-        recentReports={navigation.recentReports.map((report) => ({
+        recentReports={navigation.recentReports.map((report: RecentReport) => ({
           href: `/editions/${report.marketDateIso}` as Route,
           label: report.title,
           dateLabel: formatMarketDate(report.marketDate)
         }))}
-        sectorLinks={navigation.topSectors.map((sector) => ({
+        sectorLinks={navigation.topSectors.map((sector: TopSector) => ({
           label: sector.label,
           count: sector.count,
           href: `/topics/${sector.slug}` as Route

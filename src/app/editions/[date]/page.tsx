@@ -66,7 +66,7 @@ export default async function EditionPage({ params }: EditionPageProps) {
           <article className="detail-card">
             <p className="eyebrow">Lead sectors</p>
             <div className="summary-stack">
-              {leadSectors.map(([sector, count]) => (
+              {leadSectors.map(([sector, count]: [string, number]) => (
                 <Link
                   className="summary-chip"
                   href={`/topics/${slugifyTopic(sector)}`}
@@ -82,7 +82,7 @@ export default async function EditionPage({ params }: EditionPageProps) {
             <p className="eyebrow">Lead tickers</p>
             <div className="summary-stack">
               {leadTickers.length > 0 ? (
-                leadTickers.map(([ticker, count]) => (
+                leadTickers.map(([ticker, count]: [string, number]) => (
                   <Link className="summary-chip" href={`/stocks/${ticker}`} key={ticker}>
                     <span>{ticker}</span>
                     <span>{count} mentions</span>
@@ -129,7 +129,7 @@ export default async function EditionPage({ params }: EditionPageProps) {
               <h2>{link.event.title}</h2>
               <p>{link.event.summary}</p>
               <div className="tag-row">
-                {link.event.sectors.map((sector) => (
+                {link.event.sectors.map((sector: string) => (
                   <Link
                     className="tag"
                     href={`/topics/${slugifyTopic(sector)}`}

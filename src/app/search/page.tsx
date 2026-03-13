@@ -38,6 +38,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const hasQuery = q.trim().length > 0;
   const hasResults =
     results.reports.length > 0 || results.events.length > 0 || results.stocks.length > 0;
+  type ReportResult = (typeof results.reports)[number];
+  type EventResult = (typeof results.events)[number];
+  type StockResult = (typeof results.stocks)[number];
 
   return (
     <main className="page-shell">
@@ -65,7 +68,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </form>
         <div className="filter-group">
           <div className="filter-row">
-            {scopeOptions.map((option) => {
+            {scopeOptions.map((option: (typeof scopeOptions)[number]) => {
               const href =
                 option.value === "all"
                   ? {
@@ -96,7 +99,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             })}
           </div>
           <div className="filter-row">
-            {sortOptions.map((option) => {
+            {sortOptions.map((option: (typeof sortOptions)[number]) => {
               const href =
                 activeScope === "all"
                   ? {
@@ -163,7 +166,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <h2>Matching daily briefs.</h2>
           </div>
           <div className="stack-list">
-            {results.reports.map((report) => (
+            {results.reports.map((report: ReportResult) => (
               <article className="list-card" key={report.id}>
                 <div className="list-card-topline">
                   <span>{formatMarketDate(report.marketDate)}</span>
@@ -188,7 +191,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <h2>Matching market events.</h2>
           </div>
           <div className="stack-list">
-            {results.events.map((event) => (
+            {results.events.map((event: EventResult) => (
               <article className="list-card" key={event.id}>
                 <div className="list-card-topline">
                   <span>{event.sentiment ?? "neutral"}</span>
@@ -198,12 +201,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 <h3>{event.title}</h3>
                 <p>{event.summary}</p>
                 <div className="tag-row">
-                  {event.sectors.map((sector) => (
+                  {event.sectors.map((sector: string) => (
                     <span className="tag" key={sector}>
                       {sector}
                     </span>
                   ))}
-                  {event.tickers.map((ticker) => (
+                  {event.tickers.map((ticker: string) => (
                     <span className="tag" key={ticker}>
                       {ticker}
                     </span>
@@ -225,7 +228,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <h2>Matching stock focus notes.</h2>
           </div>
           <div className="card-grid">
-            {results.stocks.map((stock) => (
+            {results.stocks.map((stock: StockResult) => (
               <article className="card" key={stock.id}>
                 <h2>{stock.symbol}</h2>
                 <p>{stock.thesis}</p>

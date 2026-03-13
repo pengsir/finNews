@@ -193,7 +193,7 @@ export default async function AdminDashboardPage({
 
       <section className="section-block">
         <div className="filter-row admin-tab-row">
-          {tabOptions.map((tab) => (
+          {tabOptions.map((tab: (typeof tabOptions)[number]) => (
             <Link
               className={`filter-chip ${activeTab === tab.id ? "filter-chip-active" : ""}`}
               href={`/admin?tab=${tab.id}`}

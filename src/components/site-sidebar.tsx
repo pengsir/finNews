@@ -63,7 +63,7 @@ export function SiteSidebar({
       <nav className="sidebar-section" aria-label="Primary">
         <p className="sidebar-label">Navigate</p>
         <div className="sidebar-link-list">
-          {primaryLinks.map((link) => (
+          {primaryLinks.map((link: SidebarLink) => (
             <Link
               className={`sidebar-link ${isActivePath(pathname, link.href) ? "sidebar-link-active" : ""}`}
               href={link.href}
@@ -78,7 +78,7 @@ export function SiteSidebar({
       <div className="sidebar-section">
         <p className="sidebar-label">By Date</p>
         <div className="sidebar-link-list">
-          {recentReports.map((report) => (
+          {recentReports.map((report: SidebarReportLink) => (
             <Link
               className="sidebar-link"
               href={report.href}
@@ -94,7 +94,7 @@ export function SiteSidebar({
       <div className="sidebar-section">
         <p className="sidebar-label">By Category</p>
         <div className="sidebar-link-list">
-          {sectorLinks.map((sector) => (
+          {sectorLinks.map((sector: SidebarSectorLink) => (
             <Link className="sidebar-link" href={sector.href} key={sector.label}>
               <span>{sector.label}</span>
               <span className="sidebar-count">{sector.count}</span>

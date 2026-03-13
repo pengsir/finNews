@@ -54,7 +54,7 @@ export default async function HomePage() {
       </section>
 
       <section className="card-grid" aria-label="Platform overview">
-        {sections.map((section) => (
+        {sections.map((section: (typeof sections)[number]) => (
           <article className="card" key={section.title}>
             <h2>{section.title}</h2>
             <p>{section.body}</p>
@@ -80,7 +80,7 @@ export default async function HomePage() {
                   <h3>{link.event.title}</h3>
                   <p>{link.event.summary}</p>
                   <div className="tag-row">
-                    {link.event.sectors.map((sector) => (
+                    {link.event.sectors.map((sector: string) => (
                       <span className="tag" key={sector}>
                         {sector}
                       </span>
@@ -100,7 +100,7 @@ export default async function HomePage() {
               <h2>Symbols pulled into the report narrative.</h2>
             </div>
             <div className="card-grid">
-              {latestReport.stockFocuses.map((focus) => (
+              {latestReport.stockFocuses.map((focus: (typeof latestReport.stockFocuses)[number]) => (
                 <article className="card" key={focus.id}>
                   <h2>{focus.symbol}</h2>
                   <p>{focus.thesis}</p>

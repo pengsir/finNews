@@ -22,6 +22,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
   const activeSort: ArchiveSort =
     sort === "events" || sort === "stocks" ? sort : "recent";
   const reports = await getPublishedReports(30, activeSort);
+  type ReportItem = (typeof reports)[number];
 
   return (
     <main className="page-shell">
@@ -33,7 +34,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
           coverage, and direct links into each briefing.
         </p>
         <div className="filter-row">
-          {archiveSortOptions.map((option) => (
+          {archiveSortOptions.map((option: (typeof archiveSortOptions)[number]) => (
             <Link
               className={`filter-chip ${activeSort === option.value ? "filter-chip-active" : ""}`}
               href={
@@ -51,7 +52,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps) {
 
       <section className="section-block">
         <div className="stack-list">
-          {reports.map((report) => (
+          {reports.map((report: ReportItem) => (
             <article className="list-card" key={report.id}>
               <div className="list-card-topline">
                 <span>{formatMarketDate(report.marketDate)}</span>

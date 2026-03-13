@@ -37,12 +37,12 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
           <article className="feature-card">
             <p className="eyebrow">Merged event</p>
             <div className="tag-row">
-              {event.sectors.map((sector) => (
+              {event.sectors.map((sector: string) => (
                 <span className="tag" key={sector}>
                   {sector}
                 </span>
               ))}
-              {event.tickers.map((ticker) => (
+              {event.tickers.map((ticker: string) => (
                 <span className="tag" key={ticker}>
                   {ticker}
                 </span>
