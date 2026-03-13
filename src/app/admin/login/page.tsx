@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { isAdminAuthenticated } from "@/server/admin/auth";
 import { loginAction } from "@/app/admin/actions";
 
+export const dynamic = "force-dynamic";
+
 interface AdminLoginPageProps {
   searchParams?: Promise<{
     error?: string;

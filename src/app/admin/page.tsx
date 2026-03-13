@@ -17,6 +17,8 @@ import {
   updateAdminPasswordAction
 } from "@/app/admin/actions";
 
+export const dynamic = "force-dynamic";
+
 type AdminTab =
   | "overview"
   | "automation"
