@@ -114,6 +114,12 @@ Then:
 - The app will only start a job when the ET hour/minute stored in `AutomationSetting` has been reached
 - You can change the schedule later from `/admin?tab=automation`
 
+## CI
+
+- `.github/workflows/ci.yml` runs on push and pull request
+- It validates dependency install, Prisma client generation, type-check, and production build
+- The scheduler workflow is separate and only triggers the cron endpoint
+
 ## Automation
 
 - Manual trigger: `/admin` -> `Automation` tab -> `Run daily pipeline now`

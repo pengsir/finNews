@@ -215,6 +215,7 @@ Build a public-facing AI finance analysis platform that publishes a daily pre-ma
 - Added a database-backed `AutomationSetting` for the daily report schedule, exposed the ET hour/minute in the admin `Automation` tab, and changed the deployment cron strategy to poll `/api/cron/daily-report` every 5 minutes while the route itself decides whether the configured ET trigger window has been reached.
 - After adding the new Prisma `AutomationSetting` model, local `next dev` needed a full restart to pick up the regenerated Prisma client; otherwise `/admin` could throw a stale-runtime `automationSetting.findUnique` error even though type-check and build were already green.
 - Reworked the production deployment plan around free-tier constraints: removed the Vercel cron dependency, added a GitHub Actions scheduler workflow that hits the protected cron route every 5 minutes, updated the README deployment instructions, and tightened `.gitignore` so `.env.dev` will not leak when the repository is published.
+- Added a separate GitHub Actions CI workflow for push/PR validation plus a deployment checklist document, so the newly pushed public repository is ready for cloud setup and ongoing free-tier scheduling without relying on local machine state.
 
 ### Decisions Made
 
