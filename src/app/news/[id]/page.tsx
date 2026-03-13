@@ -17,6 +17,8 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
     notFound();
   }
 
+  type ReportLink = (typeof event.reportLinks)[number];
+  type SourceLink = (typeof event.sources)[number];
   return (
     <main className="page-shell">
       <section className="hero">
@@ -56,9 +58,9 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
               <p className="eyebrow">Appears in reports</p>
               {event.reportLinks.length > 0 ? (
                 <div className="stack-links">
-                  {event.reportLinks.map(({ report }) => (
-                    <Link className="inline-link" href={`/reports/${report.slug}`} key={report.id}>
-                      {report.title}
+                  {event.reportLinks.map((link: ReportLink) => (
+                    <Link className="inline-link" href={`/reports/${link.report.slug}`} key={link.report.id}>
+                      {link.report.title}
                     </Link>
                   ))}
                 </div>
@@ -76,20 +78,20 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
           <h2>Original items preserved as evidence.</h2>
         </div>
         <div className="stack-list">
-          {event.sources.map(({ id: linkId, rawNewsItem }) => (
-            <article className="list-card" key={linkId}>
+          {event.sources.map((link: SourceLink) => (
+            <article className="list-card" key={link.id}>
               <div className="list-card-topline">
-                <span>{rawNewsItem.source.name}</span>
-                <span>{rawNewsItem.language ?? "n/a"}</span>
+                <span>{link.rawNewsItem.source.name}</span>
+                <span>{link.rawNewsItem.language ?? "n/a"}</span>
                 <span>
-                  {rawNewsItem.publishedAt
-                    ? formatMarketDate(rawNewsItem.publishedAt)
+                  {link.rawNewsItem.publishedAt
+                    ? formatMarketDate(link.rawNewsItem.publishedAt)
                     : "No publish date"}
                 </span>
               </div>
-              <h3>{rawNewsItem.title}</h3>
-              <p>{rawNewsItem.summary ?? "No summary available."}</p>
-              <a className="inline-link" href={rawNewsItem.url} target="_blank" rel="noreferrer">
+              <h3>{link.rawNewsItem.title}</h3>
+              <p>{link.rawNewsItem.summary ?? "No summary available."}</p>
+              <a className="inline-link" href={link.rawNewsItem.url} target="_blank" rel="noreferrer">
                 Open source article
               </a>
             </article>

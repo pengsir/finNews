@@ -17,6 +17,9 @@ export default async function TopicPage({ params }: TopicPageProps) {
     notFound();
   }
 
+  type TopicReport = (typeof topic.reports)[number];
+  type MatchingEventLink = (typeof topic.reports)[number]["matchingEvents"][number];
+  type RelatedStock = (typeof topic.relatedStocks)[number];
   const totalEventCount = topic.reports.reduce(
     (sum, report) => sum + report.matchingEvents.length,
     0
@@ -97,7 +100,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
           <h2>Published editions carrying this theme.</h2>
         </div>
         <div className="stack-list">
-          {topic.reports.map((report) => (
+          {topic.reports.map((report: TopicReport) => (
             <article className="list-card" key={report.id}>
               <div className="list-card-topline">
                 <span>{formatMarketDate(report.marketDate)}</span>
@@ -107,10 +110,10 @@ export default async function TopicPage({ params }: TopicPageProps) {
               <h2>{report.title}</h2>
               <p>{report.summary}</p>
               <div className="topic-event-list">
-                {report.matchingEvents.slice(0, 3).map(({ event }) => (
-                  <Link className="topic-event-link" href={`/news/${event.slug}`} key={event.id}>
-                    <strong>{event.title}</strong>
-                    <span>{event.summary}</span>
+                {report.matchingEvents.slice(0, 3).map((link: MatchingEventLink) => (
+                  <Link className="topic-event-link" href={`/news/${link.event.slug}`} key={link.event.id}>
+                    <strong>{link.event.title}</strong>
+                    <span>{link.event.summary}</span>
                   </Link>
                 ))}
               </div>
@@ -137,7 +140,7 @@ export default async function TopicPage({ params }: TopicPageProps) {
             <h2>Tickers repeatedly surfacing in this topic.</h2>
           </div>
           <div className="card-grid">
-            {topic.relatedStocks.map((stock) => (
+            {topic.relatedStocks.map((stock: RelatedStock) => (
               <article className="card stock-focus-card" key={stock.id}>
                 <p className="eyebrow">Ticker</p>
                 <h2>{stock.symbol}</h2>

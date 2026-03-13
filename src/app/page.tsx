@@ -70,23 +70,23 @@ export default async function HomePage() {
               <h2>What is driving the current mock pre-market brief.</h2>
             </div>
             <div className="stack-list">
-              {latestReport.events.map(({ event }, index) => (
-                <article className="list-card" key={event.id}>
+              {latestReport.events.map((link: (typeof latestReport.events)[number], index) => (
+                <article className="list-card" key={link.event.id}>
                   <div className="list-card-topline">
                     <span>#{index + 1}</span>
-                    <span>{event.sentiment ?? "neutral"}</span>
-                    <span>{event.importanceScore.toFixed(1)} / 10</span>
+                    <span>{link.event.sentiment ?? "neutral"}</span>
+                    <span>{link.event.importanceScore.toFixed(1)} / 10</span>
                   </div>
-                  <h3>{event.title}</h3>
-                  <p>{event.summary}</p>
+                  <h3>{link.event.title}</h3>
+                  <p>{link.event.summary}</p>
                   <div className="tag-row">
-                    {event.sectors.map((sector) => (
+                    {link.event.sectors.map((sector) => (
                       <span className="tag" key={sector}>
                         {sector}
                       </span>
                     ))}
                   </div>
-                  <Link className="inline-link" href={`/news/${event.slug}`}>
+                  <Link className="inline-link" href={`/news/${link.event.slug}`}>
                     View evidence
                   </Link>
                 </article>

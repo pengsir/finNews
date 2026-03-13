@@ -19,6 +19,7 @@ export default async function StockPage({ params }: StockPageProps) {
   }
 
   const latestEntry = stockEntries[0];
+  type ReportEventLink = (typeof latestEntry.report.events)[number];
 
   return (
     <main className="page-shell">
@@ -61,11 +62,11 @@ export default async function StockPage({ params }: StockPageProps) {
           <h2>Related events from the latest linked report.</h2>
         </div>
         <div className="card-grid">
-          {latestEntry.report.events.map(({ event }) => (
-            <article className="card" key={event.id}>
-              <h2>{event.title}</h2>
-              <p>{event.summary}</p>
-              <Link className="inline-link" href={`/news/${event.slug}`}>
+          {latestEntry.report.events.map((link: ReportEventLink) => (
+            <article className="card" key={link.event.id}>
+              <h2>{link.event.title}</h2>
+              <p>{link.event.summary}</p>
+              <Link className="inline-link" href={`/news/${link.event.slug}`}>
                 View event evidence
               </Link>
             </article>

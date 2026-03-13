@@ -49,6 +49,9 @@ export default async function ReportPage({ params }: ReportPageProps) {
     notFound();
   }
 
+  type ReportEventLink = (typeof report.events)[number];
+  type EventSourceLink = (typeof report.events)[number]["event"]["sources"][number];
+  type StockFocus = (typeof report.stockFocuses)[number];
   const parsedContent = parseReportContent(report.contentZhEn);
   const sectorLines = splitDetailLines(report.sectorView);
   const tradingLines = splitDetailLines(report.tradingView);
@@ -144,34 +147,34 @@ export default async function ReportPage({ params }: ReportPageProps) {
           <h2>Events and source cards behind the report.</h2>
         </div>
         <div className="stack-list">
-          {report.events.map(({ event, sortOrder }) => (
-            <article className="list-card" key={event.id}>
+          {report.events.map((link: ReportEventLink) => (
+            <article className="list-card" key={link.event.id}>
               <div className="list-card-topline">
-                <span>#{sortOrder}</span>
-                <span>{event.sentiment ?? "neutral"}</span>
-                <span>{event.sources.length} linked sources</span>
+                <span>#{link.sortOrder}</span>
+                <span>{link.event.sentiment ?? "neutral"}</span>
+                <span>{link.event.sources.length} linked sources</span>
               </div>
-              <h3>{event.title}</h3>
-              <p>{event.summary}</p>
+              <h3>{link.event.title}</h3>
+              <p>{link.event.summary}</p>
               <div className="tag-row">
-                {event.tickers.map((ticker) => (
+                {link.event.tickers.map((ticker) => (
                   <span className="tag" key={ticker}>
                     {ticker}
                   </span>
                 ))}
               </div>
               <div className="source-card-grid">
-                {event.sources.slice(0, 3).map(({ id, rawNewsItem }) => (
-                  <div className="source-card" key={id}>
+                {link.event.sources.slice(0, 3).map((sourceLink: EventSourceLink) => (
+                  <div className="source-card" key={sourceLink.id}>
                     <div className="list-card-topline">
-                      <span>{rawNewsItem.source.name}</span>
-                      <span>{formatMarketDate(rawNewsItem.publishedAt ?? report.marketDate)}</span>
+                      <span>{sourceLink.rawNewsItem.source.name}</span>
+                      <span>{formatMarketDate(sourceLink.rawNewsItem.publishedAt ?? report.marketDate)}</span>
                     </div>
-                    <h4>{rawNewsItem.title}</h4>
-                    <p>{rawNewsItem.summary ?? "No source summary available."}</p>
+                    <h4>{sourceLink.rawNewsItem.title}</h4>
+                    <p>{sourceLink.rawNewsItem.summary ?? "No source summary available."}</p>
                     <a
                       className="inline-link"
-                      href={rawNewsItem.url}
+                      href={sourceLink.rawNewsItem.url}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -180,7 +183,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
                   </div>
                 ))}
               </div>
-              <Link className="inline-link" href={`/news/${event.slug}`}>
+              <Link className="inline-link" href={`/news/${link.event.slug}`}>
                 Open evidence detail
               </Link>
             </article>
@@ -195,7 +198,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
             <h2>Focused tickers mentioned in the brief.</h2>
           </div>
           <div className="card-grid">
-            {report.stockFocuses.map((focus) => (
+            {report.stockFocuses.map((focus: StockFocus) => (
               <article className="card stock-focus-card" key={focus.id}>
                 <p className="eyebrow">Ticker</p>
                 <h2>{focus.symbol}</h2>

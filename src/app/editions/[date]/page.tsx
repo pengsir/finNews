@@ -17,6 +17,8 @@ export default async function EditionPage({ params }: EditionPageProps) {
     notFound();
   }
 
+  type ReportEventLink = (typeof report.events)[number];
+  type StockFocus = (typeof report.stockFocuses)[number];
   const sectorCounts = new Map<string, number>();
   const tickerCounts = new Map<string, number>();
 
@@ -117,17 +119,17 @@ export default async function EditionPage({ params }: EditionPageProps) {
           <h2>The event stack for this trading day.</h2>
         </div>
         <div className="stack-list">
-          {report.events.map(({ event, sortOrder }) => (
-            <article className="list-card" key={event.id}>
+          {report.events.map((link: ReportEventLink) => (
+            <article className="list-card" key={link.event.id}>
               <div className="list-card-topline">
-                <span>#{sortOrder}</span>
-                <span>{event.sentiment ?? "neutral"}</span>
-                <span>{event.importanceScore.toFixed(1)} / 10</span>
+                <span>#{link.sortOrder}</span>
+                <span>{link.event.sentiment ?? "neutral"}</span>
+                <span>{link.event.importanceScore.toFixed(1)} / 10</span>
               </div>
-              <h2>{event.title}</h2>
-              <p>{event.summary}</p>
+              <h2>{link.event.title}</h2>
+              <p>{link.event.summary}</p>
               <div className="tag-row">
-                {event.sectors.map((sector) => (
+                {link.event.sectors.map((sector) => (
                   <Link
                     className="tag"
                     href={`/topics/${slugifyTopic(sector)}`}
@@ -137,7 +139,7 @@ export default async function EditionPage({ params }: EditionPageProps) {
                   </Link>
                 ))}
               </div>
-              <Link className="inline-link" href={`/news/${event.slug}`}>
+              <Link className="inline-link" href={`/news/${link.event.slug}`}>
                 Open evidence detail
               </Link>
             </article>
@@ -152,7 +154,7 @@ export default async function EditionPage({ params }: EditionPageProps) {
             <h2>Stocks worth revisiting from this edition.</h2>
           </div>
           <div className="card-grid">
-            {report.stockFocuses.map((focus) => (
+            {report.stockFocuses.map((focus: StockFocus) => (
               <article className="card stock-focus-card" key={focus.id}>
                 <p className="eyebrow">Ticker</p>
                 <h2>{focus.symbol}</h2>
