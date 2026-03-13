@@ -157,8 +157,12 @@ export default async function AdminDashboardPage({
   const jobProviders = Array.from(
     new Set(recentJobs.map((job: Job) => job.aiProvider).filter(Boolean))
   ) as string[];
-  const aiProviders = Array.from(new Set(aiConfigs.map((config: AiConfig) => config.provider)));
-  const sourceTypes = Array.from(new Set(sources.map((source: Source) => source.sourceType)));
+  const aiProviders = Array.from(
+    new Set(aiConfigs.map((config: AiConfig) => config.provider))
+  ) as string[];
+  const sourceTypes = Array.from(
+    new Set(sources.map((source: Source) => source.sourceType))
+  ) as string[];
 
   return (
     <main className="page-shell">
