@@ -35,7 +35,7 @@ const tabOptions: Array<{ id: AdminTab; label: string }> = [
 ];
 
 function getActiveTab(value?: string): AdminTab {
-  return tabOptions.some((tab) => tab.id === value) ? (value as AdminTab) : "overview";
+  return tabOptions.some((tab: { id: AdminTab }) => tab.id === value) ? (value as AdminTab) : "overview";
 }
 
 function formatJobDuration(startedAt: Date | null, finishedAt: Date | null) {
@@ -154,7 +154,9 @@ export default async function AdminDashboardPage({
 
     return statusPass && typePass;
   });
-  const jobProviders = Array.from(new Set(recentJobs.map((job: Job) => job.aiProvider).filter(Boolean)));
+  const jobProviders = Array.from(
+    new Set(recentJobs.map((job: Job) => job.aiProvider).filter(Boolean))
+  ) as string[];
   const aiProviders = Array.from(new Set(aiConfigs.map((config: AiConfig) => config.provider)));
   const sourceTypes = Array.from(new Set(sources.map((source: Source) => source.sourceType)));
 
@@ -169,7 +171,7 @@ export default async function AdminDashboardPage({
         </p>
         <div className="hero-meta">
           <span>{activeAiConfig?.label ?? "No active AI profile"}</span>
-          <span>{sources.filter((source) => source.isActive).length} active sources</span>
+          <span>{sources.filter((source: Source) => source.isActive).length} active sources</span>
           <span>{totals.views} tracked report views</span>
           <span>{totals.feedback} reader feedback items</span>
         </div>
@@ -225,7 +227,7 @@ export default async function AdminDashboardPage({
                   <span>{latestJob?.status ?? "No runs"}</span>
                   <span>{totals.views}</span>
                   <span>{totals.feedback}</span>
-                  <span>{sources.filter((source) => source.isActive).length}</span>
+                  <span>{sources.filter((source: Source) => source.isActive).length}</span>
                 </div>
                 <p className="admin-row-note">
                   Scheduled daily trigger: {formatScheduleLabel(automationSetting.scheduleHourEt, automationSetting.scheduleMinuteEt)}
@@ -247,7 +249,7 @@ export default async function AdminDashboardPage({
                 <span>Open</span>
               </div>
               <div className="admin-compact-list">
-                {reports.map((report) => (
+                {reports.map((report: (typeof reports)[number]) => (
                   <article className="admin-compact-row" key={report.id}>
                     <div className="admin-micro-grid admin-micro-grid-reports">
                       <span>{formatMarketDate(report.marketDate)}</span>
@@ -297,7 +299,7 @@ export default async function AdminDashboardPage({
                     <span>Provider</span>
                     <select defaultValue={jobProviderFilter} name="jobProvider">
                       <option value="all">All providers</option>
-                      {jobProviders.map((provider) => (
+                      {jobProviders.map((provider: string) => (
                         <option key={provider} value={provider ?? "unknown"}>
                           {provider}
                         </option>
@@ -388,7 +390,7 @@ export default async function AdminDashboardPage({
                 {filteredJobs.length === 0 ? (
                   <p className="muted-copy">No pipeline runs recorded yet.</p>
                 ) : (
-                  filteredJobs.map((job) => (
+                  filteredJobs.map((job: Job) => (
                     <article className="admin-table-row" key={job.id}>
                       <div className="admin-micro-grid admin-micro-grid-jobs-collapsed">
                         <span className={`admin-status-badge admin-status-${job.status.toLowerCase()}`}>
@@ -468,7 +470,7 @@ export default async function AdminDashboardPage({
                     <span>Provider</span>
                     <select defaultValue={aiProviderFilter} name="aiProvider">
                       <option value="all">All providers</option>
-                      {aiProviders.map((provider) => (
+                      {aiProviders.map((provider: string) => (
                         <option key={provider} value={provider}>
                           {provider}
                         </option>
@@ -492,7 +494,7 @@ export default async function AdminDashboardPage({
                   <span>Actions</span>
                 </div>
                 <div className="admin-compact-list admin-compact-list-tight">
-            {filteredAiConfigs.map((config) => (
+            {filteredAiConfigs.map((config: AiConfig) => (
               <article
                 className={`admin-table-row ${config.isActive ? "admin-table-row-active" : ""}`}
                 key={config.id}
@@ -637,7 +639,7 @@ export default async function AdminDashboardPage({
                     <span>Type</span>
                     <select defaultValue={sourceTypeFilter} name="sourceType">
                       <option value="all">All types</option>
-                      {sourceTypes.map((type) => (
+                      {sourceTypes.map((type: string) => (
                         <option key={type} value={type}>
                           {type}
                         </option>
@@ -663,7 +665,7 @@ export default async function AdminDashboardPage({
                   <span>Actions</span>
                 </div>
                 <div className="admin-compact-list admin-compact-list-tight">
-            {filteredSources.map((source) => (
+            {filteredSources.map((source: Source) => (
               <article className="admin-table-row" key={source.id}>
                 <form action={saveNewsSourceAction} className="admin-form admin-form-compact">
                   <input name="id" type="hidden" value={source.id} />
@@ -796,7 +798,7 @@ export default async function AdminDashboardPage({
                 {recentFeedback.length === 0 ? (
                   <p className="muted-copy">No reader feedback yet.</p>
                 ) : (
-                  recentFeedback.map((entry) => (
+                  recentFeedback.map((entry: (typeof recentFeedback)[number]) => (
                     <article className="admin-compact-row" key={entry.id}>
                       <div className="admin-micro-grid admin-micro-grid-feedback">
                         <strong>{entry.reaction}</strong>
