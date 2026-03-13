@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReportStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum FeedbackReaction {
+  LIKE
+  UNLIKE
+}
+
+model NewsSource {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  feedUrl     String
+  sourceType  String
+  weight      Float         @default(1)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  rawItems    RawNewsItem[]
+}
+
+model RawNewsItem {
+  id             String      @id @default(cuid())
+  sourceId       String
+  externalId     String?
+  title          String
+  url            String      @unique
+  language       String?
+  publishedAt    DateTime?
+  summary        String?
+  content        String?
+  importanceHint Float?
+  createdAt      DateTime    @default(now())
+  source         NewsSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  eventLinks     NewsEventSource[]
+
+  @@index([sourceId, publishedAt])
+}
+
+model NewsEvent {
+  id              String              @id @default(cuid())
+  slug            String              @unique
+  title           String
+  summary         String
+  sentiment       String?
+  importanceScore Float               @default(0)
+  sectors         String[]
+  tickers         String[]
+  marketDate      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  sources         NewsEventSource[]
+  reportLinks     DailyReportEvent[]
+}
+
+model NewsEventSource {
+  id            String      @id @default(cuid())
+  eventId       String
+  rawNewsItemId String
+  createdAt     DateTime    @default(now())
+  event         NewsEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  rawNewsItem   RawNewsItem @relation(fields: [rawNewsItemId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, rawNewsItemId])
+}
+
+model DailyReport {
+  id               String             @id @default(cuid())
+  slug             String             @unique
+  marketDate       DateTime           @unique
+  title            String
+  summary          String
+  contentZhEn      String
+  sentimentSummary String?
+  sectorView       String?
+  tradingView      String?
+  riskWarning      String
+  disclaimer       String
+  status           ReportStatus       @default(DRAFT)
+  publishedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  events           DailyReportEvent[]
+  stockFocuses     StockFocus[]
+  manualEdits      ManualEditLog[]
+  feedbackEntries  ReportFeedback[]
+  pageViews        ReportPageView[]
+}
+
+model DailyReportEvent {
+  id        String      @id @default(cuid())
+  reportId  String
+  eventId   String
+  sortOrder Int
+  report    DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  event     NewsEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([reportId, eventId])
+  @@index([reportId, sortOrder])
+}
+
+model StockFocus {
+  id         String      @id @default(cuid())
+  reportId   String
+  symbol     String
+  company    String?
+  thesis     String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  report     DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([symbol])
+}
+
+model AiProviderConfig {
+  id         String   @id @default(cuid())
+  label      String
+  provider   String
+  baseUrl    String
+  apiKey     String?
+  model      String
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model AutomationSetting {
+  id                    String   @id @default(cuid())
+  jobType               String   @unique
+  scheduleHourEt        Int
+  scheduleMinuteEt      Int
+  lastScheduledDateEt   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model JobRun {
+  id               String    @id @default(cuid())
+  jobType          String
+  triggerSource    String?
+  aiProvider       String?
+  aiModel          String?
+  reportSlug       String?
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+  status           JobStatus @default(QUEUED)
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  attempt          Int       @default(1)
+  message          String?
+  metadataJson     String?
+  createdAt        DateTime  @default(now())
+
+  @@index([jobType, createdAt])
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ManualEditLog {
+  id          String    @id @default(cuid())
+  reportId    String
+  editorLabel String
+  note        String
+  createdAt   DateTime  @default(now())
+  report      DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
+}
+
+model ReportFeedback {
+  id          String            @id @default(cuid())
+  reportId    String
+  reaction    FeedbackReaction
+  reason      String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  report      DailyReport       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
+  @@index([reportId, reaction])
+}
+
+model ReportPageView {
+  id         String      @id @default(cuid())
+  reportId   String
+  createdAt  DateTime    @default(now())
+  report     DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
+}
