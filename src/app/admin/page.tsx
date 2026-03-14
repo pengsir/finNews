@@ -135,7 +135,9 @@ export default async function AdminDashboardPage({
   const runMessage = params?.message;
   const scheduleStatus = params?.schedule;
   const runningJob = recentJobs.find((job: Job) => job.status === "RUNNING") ?? null;
+  const isDispatchPending = runStatus === "started" && !runningJob;
   const isJobRunning = Boolean(runningJob);
+  const isAutomationBusy = isJobRunning || isDispatchPending;
   const activeAiConfig = aiConfigs.find((config: AiConfig) => config.isActive) ?? null;
   const latestJob = recentJobs[0] ?? null;
   const filteredJobs = recentJobs.filter((job: Job) => {
@@ -322,7 +324,7 @@ export default async function AdminDashboardPage({
                   <div className="admin-toolbar-note">
                     <strong>Schedule:</strong> checked every 5 minutes, runs at {formatScheduleLabel(automationSetting.scheduleHourEt, automationSetting.scheduleMinuteEt)}
                   </div>
-                  {isJobRunning ? (
+                  {isAutomationBusy ? (
                     <form action={clearRunningPipelineJobAction}>
                       <button className="button-link button-link-secondary" type="submit">
                         Clear running job
@@ -330,8 +332,8 @@ export default async function AdminDashboardPage({
                     </form>
                   ) : null}
                   <form action={runPipelineAction}>
-                    <button className="button-link" disabled={isJobRunning} type="submit">
-                      {isJobRunning ? "Running..." : "Run now"}
+                    <button className="button-link" disabled={isAutomationBusy} type="submit">
+                      {isJobRunning ? "Running..." : isDispatchPending ? "Dispatching..." : "Run now"}
                     </button>
                   </form>
                 </div>
@@ -341,8 +343,15 @@ export default async function AdminDashboardPage({
                   A pipeline job started at {formatAdminDateTime(runningJob?.startedAt ?? runningJob?.createdAt ?? null)} is still running.
                 </p>
               ) : null}
+              {isDispatchPending ? (
+                <p className="admin-form-success">
+                  Manual pipeline run dispatched to GitHub Actions. Waiting for the runner to pick it up.
+                </p>
+              ) : null}
               {runStatus === "started" ? (
-                <p className="admin-form-success">Manual pipeline run started in the background.</p>
+                <p className="admin-form-success">
+                  {runMessage ?? "Manual pipeline run has been queued for GitHub Actions."}
+                </p>
               ) : null}
               {runStatus === "cleared" ? (
                 <p className="admin-form-success">Running pipeline job cleared.</p>
