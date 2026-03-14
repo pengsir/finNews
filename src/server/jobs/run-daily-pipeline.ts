@@ -10,6 +10,22 @@ import type { ReportEventInput } from "@/server/ai/types";
 
 const RUNNING_JOB_STALE_MS = 30 * 60 * 1000;
 
+function safeRevalidatePath(path: string) {
+  try {
+    revalidatePath(path);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+
+    // GitHub Actions / CLI runs execute outside a Next request context, where
+    // revalidatePath has no static generation store to talk to.
+    if (message.includes("static generation store missing")) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
 function getMarketDate(inputDate = new Date()) {
   return new Date(
     Date.UTC(
@@ -327,11 +343,11 @@ async function executeDailyPipelineJob({
       }
     });
 
-    revalidatePath("/");
-    revalidatePath("/archive");
-    revalidatePath(`/reports/${reportSlug}`);
-    revalidatePath(`/editions/${marketDate.toISOString().slice(0, 10)}`);
-    revalidatePath("/search");
+    safeRevalidatePath("/");
+    safeRevalidatePath("/archive");
+    safeRevalidatePath(`/reports/${reportSlug}`);
+    safeRevalidatePath(`/editions/${marketDate.toISOString().slice(0, 10)}`);
+    safeRevalidatePath("/search");
 
     return result;
   } catch (error) {
