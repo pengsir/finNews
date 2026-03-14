@@ -5,6 +5,21 @@ const globalForPrisma = globalThis as typeof globalThis & {
   prisma?: PrismaClient;
 };
 
+function normalizeConnectionString(connectionString: string) {
+  try {
+    const url = new URL(connectionString);
+    const sslMode = url.searchParams.get("sslmode");
+
+    if (sslMode === "require" && !url.searchParams.has("uselibpqcompat")) {
+      url.searchParams.set("uselibpqcompat", "true");
+    }
+
+    return url.toString();
+  } catch {
+    return connectionString;
+  }
+}
+
 function createUnavailablePrismaClient(reason: string) {
   const throwUnavailable = () => {
     throw new Error(reason);
@@ -26,7 +41,9 @@ function createPrismaClient() {
     );
   }
 
-  const adapter = new PrismaPg({ connectionString });
+  const adapter = new PrismaPg({
+    connectionString: normalizeConnectionString(connectionString)
+  });
   return new PrismaClient({ adapter });
 }
 

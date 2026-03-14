@@ -80,6 +80,7 @@ ADMIN_PASSWORD=
 ```
 
 Do not set production AI provider env vars. Production report generation reads the active provider row from the `AiProviderConfig` table instead.
+If your Supabase URLs use `sslmode=require`, the app automatically adds `uselibpqcompat=true` for Prisma/pg compatibility.
 
 ### 3. Deploy the App
 
@@ -108,6 +109,8 @@ Add these GitHub Actions secrets:
 DATABASE_URL=<same pooled connection string used in Vercel>
 DIRECT_URL=<same direct connection string used in Vercel>
 ```
+
+If your secret values already include `sslmode=require`, you do not need to rewrite them manually; the runtime adds the compatibility flag automatically.
 
 Then:
 - GitHub Actions will wake up every 5 minutes
