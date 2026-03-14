@@ -261,6 +261,40 @@ export async function runPipelineAction() {
   redirect("/admin?tab=automation&run=started" as never);
 }
 
+export async function clearRunningPipelineJobAction() {
+  await requireAdminAuth();
+
+  const runningJobs = await prisma.jobRun.findMany({
+    where: {
+      jobType: "daily-report",
+      status: "RUNNING"
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (runningJobs.length === 0) {
+    redirect("/admin?tab=automation&run=error&message=No%20running%20job%20to%20clear." as never);
+  }
+
+  await prisma.jobRun.updateMany({
+    where: {
+      id: {
+        in: runningJobs.map((job) => job.id)
+      }
+    },
+    data: {
+      status: "FAILED",
+      finishedAt: new Date(),
+      message: "Manually cleared from admin automation panel."
+    }
+  });
+
+  revalidatePath("/admin");
+  redirect("/admin?tab=automation&run=cleared" as never);
+}
+
 export async function saveAutomationScheduleAction(formData: FormData) {
   await requireAdminAuth();
 

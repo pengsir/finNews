@@ -6,6 +6,7 @@ import { requireAdminAuth } from "@/server/admin/auth";
 import { getAdminDashboardData } from "@/server/queries/admin-content";
 import {
   activateAiConfigAction,
+  clearRunningPipelineJobAction,
   deactivateAiConfigAction,
   deleteAiConfigAction,
   deleteNewsSourceAction,
@@ -321,6 +322,13 @@ export default async function AdminDashboardPage({
                   <div className="admin-toolbar-note">
                     <strong>Schedule:</strong> checked every 5 minutes, runs at {formatScheduleLabel(automationSetting.scheduleHourEt, automationSetting.scheduleMinuteEt)}
                   </div>
+                  {isJobRunning ? (
+                    <form action={clearRunningPipelineJobAction}>
+                      <button className="button-link button-link-secondary" type="submit">
+                        Clear running job
+                      </button>
+                    </form>
+                  ) : null}
                   <form action={runPipelineAction}>
                     <button className="button-link" disabled={isJobRunning} type="submit">
                       {isJobRunning ? "Running..." : "Run now"}
@@ -335,6 +343,9 @@ export default async function AdminDashboardPage({
               ) : null}
               {runStatus === "started" ? (
                 <p className="admin-form-success">Manual pipeline run started in the background.</p>
+              ) : null}
+              {runStatus === "cleared" ? (
+                <p className="admin-form-success">Running pipeline job cleared.</p>
               ) : null}
               {scheduleStatus === "updated" ? (
                 <p className="admin-form-success">
