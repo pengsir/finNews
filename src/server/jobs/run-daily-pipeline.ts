@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/server/db/prisma";
 import { getAiClient } from "@/server/ai/get-client";
 import { getAiRuntimeConfig } from "@/server/ai/provider-config";
@@ -6,6 +7,8 @@ import { normalizeGeneratedReport } from "@/server/ai/normalize-generated-report
 import { buildEventCandidates } from "@/server/news/dedupe-rank";
 import { ingestSources } from "@/server/news/ingest";
 import type { ReportEventInput } from "@/server/ai/types";
+
+const RUNNING_JOB_STALE_MS = 30 * 60 * 1000;
 
 function getMarketDate(inputDate = new Date()) {
   return new Date(
@@ -43,7 +46,24 @@ async function createPipelineJobRun(triggerSource: string) {
   });
 
   if (runningJob) {
-    throw new Error("A daily pipeline job is already running.");
+    const staleAt = runningJob.startedAt ?? runningJob.createdAt;
+    const isStale = Date.now() - staleAt.getTime() > RUNNING_JOB_STALE_MS;
+
+    if (isStale) {
+      await prisma.jobRun.update({
+        where: {
+          id: runningJob.id
+        },
+        data: {
+          status: "FAILED",
+          finishedAt: new Date(),
+          message:
+            "Marked as failed after exceeding the running timeout window."
+        }
+      });
+    } else {
+      throw new Error("A daily pipeline job is already running.");
+    }
   }
 
   const jobRun = await prisma.jobRun.create({
@@ -352,7 +372,7 @@ export async function runDailyPipeline(triggerSource = "SYSTEM") {
 export async function startDailyPipeline(triggerSource = "SYSTEM") {
   const { jobRun, marketDate, runtimeConfig } = await createPipelineJobRun(triggerSource);
 
-  setTimeout(() => {
+  after(() => {
     void executeDailyPipelineJob({
       jobRunId: jobRun.id,
       marketDate,
@@ -361,7 +381,7 @@ export async function startDailyPipeline(triggerSource = "SYSTEM") {
     }).catch((error) => {
       console.error("Background daily pipeline failed", error);
     });
-  }, 0);
+  });
 
   return {
     jobId: jobRun.id
