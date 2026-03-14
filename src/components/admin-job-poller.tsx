@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 interface AdminJobPollerProps {
-  jobId: string;
+  jobId?: string;
 }
 
 export function AdminJobPoller({ jobId }: AdminJobPollerProps) {
@@ -14,6 +14,13 @@ export function AdminJobPoller({ jobId }: AdminJobPollerProps) {
     let stopped = false;
 
     async function poll() {
+      if (!jobId) {
+        if (!stopped) {
+          router.refresh();
+        }
+        return;
+      }
+
       try {
         const response = await fetch(`/api/admin/jobs/${jobId}`, {
           cache: "no-store"

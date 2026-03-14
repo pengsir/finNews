@@ -33,19 +33,28 @@ function parseReportContent(content: string) {
         ? evidenceIndex
         : paragraphs.length;
   const evidenceStart = evidenceIndex !== -1 ? evidenceIndex + 1 : paragraphs.length;
-  const conclusionLines =
+  const conclusionBlock =
     conclusionIndex === -1
-      ? []
+      ? ""
       : paragraphs
-          .slice(conclusionIndex + 1, evidenceIndex === -1 ? paragraphs.length : evidenceIndex)
-          .filter((paragraph: string) => paragraph.startsWith("- "));
+          .slice(
+            conclusionIndex + 1,
+            evidenceIndex === -1 ? paragraphs.length : evidenceIndex
+          )
+          .join("\n");
+  const evidenceBlock = paragraphs.slice(evidenceStart).join("\n");
+  const conclusionLines = conclusionBlock
+    .split("\n")
+    .map((line: string) => line.trim())
+    .filter((line: string) => line.startsWith("- "));
 
   return {
     narrative: paragraphs.slice(0, narrativeEnd),
     conclusionLines,
-    evidenceLines: paragraphs
-      .slice(evidenceStart)
-      .filter((paragraph: string) => paragraph.startsWith("- "))
+    evidenceLines: evidenceBlock
+      .split("\n")
+      .map((line: string) => line.trim())
+      .filter((line: string) => line.startsWith("- "))
   };
 }
 
@@ -147,7 +156,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
         </div>
       </section>
 
-      {parsedContent.evidenceLines.length > 0 ? (
+      {parsedContent.conclusionLines.length > 0 ? (
         <section className="section-block">
           <div className="section-heading">
             <p className="eyebrow">Conclusion</p>

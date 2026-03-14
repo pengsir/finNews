@@ -91,6 +91,7 @@ interface AdminDashboardPageProps {
     sourceType?: string;
     jobOpen?: string;
     run?: string;
+    dispatchedAt?: string;
     message?: string;
     schedule?: string;
   }>;
@@ -132,10 +133,36 @@ export default async function AdminDashboardPage({
   const sourceTypeFilter = params?.sourceType ?? "all";
   const openJobId = params?.jobOpen;
   const runStatus = params?.run;
+  const dispatchedAt = params?.dispatchedAt;
   const runMessage = params?.message;
   const scheduleStatus = params?.schedule;
   const runningJob = recentJobs.find((job: Job) => job.status === "RUNNING") ?? null;
-  const isDispatchPending = runStatus === "started" && !runningJob;
+  const dispatchedAtMs =
+    dispatchedAt && /^\d+$/.test(dispatchedAt)
+      ? Number.parseInt(dispatchedAt, 10)
+      : null;
+  const latestAdminJob =
+    dispatchedAtMs === null
+      ? null
+      : recentJobs.find(
+          (job: Job) =>
+            job.triggerSource === "ADMIN" &&
+            job.createdAt.getTime() >= dispatchedAtMs
+        ) ?? null;
+  const derivedRunStatus =
+    runStatus === "started" && latestAdminJob && latestAdminJob.status !== "RUNNING"
+      ? latestAdminJob.status === "SUCCEEDED"
+        ? "success"
+        : latestAdminJob.status === "FAILED"
+          ? "error"
+          : runStatus
+      : runStatus;
+  const derivedRunMessage =
+    derivedRunStatus === "error" && latestAdminJob?.message
+      ? latestAdminJob.message
+      : runMessage;
+  const isDispatchPending =
+    runStatus === "started" && !runningJob && !latestAdminJob;
   const isJobRunning = Boolean(runningJob);
   const isAutomationBusy = isJobRunning || isDispatchPending;
   const activeAiConfig = aiConfigs.find((config: AiConfig) => config.isActive) ?? null;
@@ -284,7 +311,7 @@ export default async function AdminDashboardPage({
 
       {activeTab === "automation" ? (
         <section className="section-block">
-          {runningJob ? <AdminJobPoller jobId={runningJob.id} /> : null}
+          {isAutomationBusy ? <AdminJobPoller jobId={runningJob?.id} /> : null}
           <div className="section-heading">
             <p className="eyebrow">Automation</p>
             <h2>Trigger and monitor the daily generation pipeline.</h2>
@@ -348,9 +375,9 @@ export default async function AdminDashboardPage({
                   Manual pipeline run dispatched to GitHub Actions. Waiting for the runner to pick it up.
                 </p>
               ) : null}
-              {runStatus === "started" ? (
+              {derivedRunStatus === "started" ? (
                 <p className="admin-form-success">
-                  {runMessage ?? "Manual pipeline run has been queued for GitHub Actions."}
+                  {derivedRunMessage ?? "Manual pipeline run has been queued for GitHub Actions."}
                 </p>
               ) : null}
               {runStatus === "cleared" ? (
@@ -361,11 +388,11 @@ export default async function AdminDashboardPage({
                   Scheduled trigger updated to {formatScheduleLabel(automationSetting.scheduleHourEt, automationSetting.scheduleMinuteEt)}.
                 </p>
               ) : null}
-              {runStatus === "success" ? (
+              {derivedRunStatus === "success" ? (
                 <p className="admin-form-success">Manual pipeline run completed successfully.</p>
               ) : null}
-              {runStatus === "error" ? (
-                <p className="admin-form-error">{runMessage ?? "Manual pipeline run failed."}</p>
+              {derivedRunStatus === "error" ? (
+                <p className="admin-form-error">{derivedRunMessage ?? "Manual pipeline run failed."}</p>
               ) : null}
             </article>
 

@@ -300,7 +300,9 @@ export async function runPipelineAction() {
   revalidatePath("/");
   revalidatePath("/archive");
   revalidatePath("/admin");
-  redirect("/admin?tab=automation&run=started&message=GitHub%20Actions%20workflow%20dispatched." as never);
+  redirect(
+    `/admin?tab=automation&run=started&dispatchedAt=${Date.now()}&message=GitHub%20Actions%20workflow%20dispatched.` as never
+  );
 }
 
 export async function clearRunningPipelineJobAction() {
