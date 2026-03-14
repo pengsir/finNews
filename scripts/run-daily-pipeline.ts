@@ -2,7 +2,8 @@ import "dotenv/config";
 import { runDailyPipeline } from "@/server/jobs/run-daily-pipeline";
 
 async function main() {
-  const result = await runDailyPipeline("CLI");
+  const triggerSource = process.env.PIPELINE_TRIGGER_SOURCE ?? "CLI";
+  const result = await runDailyPipeline(triggerSource);
   console.log(JSON.stringify(result, null, 2));
 }
 

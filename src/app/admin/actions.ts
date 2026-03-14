@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db/prisma";
-import { startDailyPipeline } from "@/server/jobs/run-daily-pipeline";
 import { getDailyReportAutomationSetting } from "@/server/automation/settings";
 import {
   clearAdminSession,
@@ -25,6 +24,48 @@ function requireString(value: FormDataEntryValue | null, field: string) {
   }
 
   return parsed;
+}
+
+async function dispatchPipelineWorkflow(triggerSource: string) {
+  const token = process.env.GITHUB_ACTIONS_TOKEN;
+  const owner = process.env.GITHUB_REPO_OWNER;
+  const repo = process.env.GITHUB_REPO_NAME;
+  const workflowId =
+    process.env.GITHUB_PIPELINE_WORKFLOW_ID ?? "pipeline-runner.yml";
+  const ref = process.env.GITHUB_REPO_REF ?? "master";
+
+  if (!token || !owner || !repo) {
+    throw new Error(
+      "GitHub Actions dispatch is not configured. Set GITHUB_ACTIONS_TOKEN, GITHUB_REPO_OWNER, and GITHUB_REPO_NAME in the deployment environment."
+    );
+  }
+
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        ref,
+        inputs: {
+          trigger_source: triggerSource
+        }
+      }),
+      cache: "no-store"
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `GitHub Actions dispatch failed (${response.status}): ${errorText}`
+    );
+  }
 }
 
 async function ensurePipelineIdle() {
@@ -245,9 +286,10 @@ export async function deleteNewsSourceAction(formData: FormData) {
 
 export async function runPipelineAction() {
   await requireAdminAuth();
+  await ensurePipelineIdle();
 
   try {
-    await startDailyPipeline("ADMIN");
+    await dispatchPipelineWorkflow("ADMIN");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Pipeline failed.";
     redirect(
@@ -258,7 +300,7 @@ export async function runPipelineAction() {
   revalidatePath("/");
   revalidatePath("/archive");
   revalidatePath("/admin");
-  redirect("/admin?tab=automation&run=started" as never);
+  redirect("/admin?tab=automation&run=started&message=GitHub%20Actions%20workflow%20dispatched." as never);
 }
 
 export async function clearRunningPipelineJobAction() {

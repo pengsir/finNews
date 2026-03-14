@@ -25,13 +25,13 @@ Finance news analysis platform built with Next.js, TypeScript, Prisma, and Postg
 
 - App hosting: Vercel Hobby
 - Database: Supabase Free PostgreSQL
-- Scheduler: GitHub Actions on a public repository
+- Scheduler and long-running pipeline execution: GitHub Actions on a public repository
 - AI: Gemini free tier or local Ollama for debugging
 
 This stack matches the current app shape well:
 - Vercel handles the Next.js app and public site
 - Supabase provides managed Postgres for Prisma
-- GitHub Actions triggers `/api/cron/daily-report` every 5 minutes, while the app decides whether the configured ET schedule window has been reached
+- GitHub Actions runs the pipeline itself every 5 minutes and records job state in the shared production database
 
 ## AI Provider Notes
 
@@ -98,21 +98,38 @@ npx prisma migrate deploy
 npm run db:seed
 ```
 
-### 4. Configure Scheduled Trigger
+### 4. Configure GitHub Actions Runner
 
-The repository includes a GitHub Actions workflow at `.github/workflows/scheduled-pipeline.yml`.
+The repository includes a GitHub Actions workflow at `.github/workflows/pipeline-runner.yml`.
 
 Add these GitHub Actions secrets:
 
 ```env
-APP_CRON_URL=https://<your-production-domain>/api/cron/daily-report
-CRON_SECRET=<same-value-as-vercel>
+DATABASE_URL=<same pooled connection string used in Vercel>
+DIRECT_URL=<same direct connection string used in Vercel>
 ```
 
 Then:
-- GitHub Actions will call the cron endpoint every 5 minutes
-- The app will only start a job when the ET hour/minute stored in `AutomationSetting` has been reached
+- GitHub Actions will wake up every 5 minutes
+- The workflow will check the ET schedule stored in `AutomationSetting`
+- When the time window is reached, the workflow will run the full daily pipeline directly on the GitHub runner
 - You can change the schedule later from `/admin?tab=automation`
+
+### 5. Configure Admin Manual Trigger
+
+The admin `Run now` button dispatches the GitHub Actions workflow instead of running a long task inside Vercel.
+
+Add these Vercel environment variables:
+
+```env
+GITHUB_ACTIONS_TOKEN=
+GITHUB_REPO_OWNER=
+GITHUB_REPO_NAME=
+GITHUB_PIPELINE_WORKFLOW_ID=pipeline-runner.yml
+GITHUB_REPO_REF=master
+```
+
+The GitHub token should have permission to dispatch workflows for this repository.
 
 ## CI
 
@@ -123,6 +140,6 @@ Then:
 ## Automation
 
 - Manual trigger: `/admin` -> `Automation` tab -> `Run daily pipeline now`
-- Scheduled trigger: `POST /api/cron/daily-report` with `Authorization: Bearer $CRON_SECRET`
-- Recommended production scheduler: GitHub Actions every 5 minutes against the same cron route
+- Manual trigger implementation: dispatches the GitHub Actions pipeline workflow
+- Scheduled trigger implementation: GitHub Actions every 5 minutes running `scripts/run-scheduled-pipeline.ts`
 - Runtime schedule source of truth: `AutomationSetting` in the database, editable from `/admin?tab=automation`

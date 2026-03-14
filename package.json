@@ -12,7 +12,8 @@
     "db:generate": "node scripts/with-env-dev.mjs prisma generate",
     "db:migrate": "node scripts/with-env-dev.mjs prisma migrate dev",
     "db:seed": "node scripts/with-env-dev.mjs node prisma/seed.mjs",
-    "pipeline:daily": "node scripts/with-env-dev.mjs tsx scripts/run-daily-pipeline.ts"
+    "pipeline:daily": "node scripts/with-env-dev.mjs tsx scripts/run-daily-pipeline.ts",
+    "pipeline:scheduled": "node scripts/with-env-dev.mjs tsx scripts/run-scheduled-pipeline.ts"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"
