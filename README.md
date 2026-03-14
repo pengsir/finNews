@@ -31,7 +31,7 @@ Finance news analysis platform built with Next.js, TypeScript, Prisma, and Postg
 This stack matches the current app shape well:
 - Vercel handles the Next.js app and public site
 - Supabase provides managed Postgres for Prisma
-- GitHub Actions runs the pipeline itself every 5 minutes and records job state in the shared production database
+- GitHub Actions runs the pipeline itself every hour and records job state in the shared production database
 
 ## AI Provider Notes
 
@@ -113,7 +113,7 @@ DIRECT_URL=<same direct connection string used in Vercel>
 If your secret values already include `sslmode=require`, you do not need to rewrite them manually; the runtime adds the compatibility flag automatically.
 
 Then:
-- GitHub Actions will wake up every 5 minutes
+- GitHub Actions will wake up every hour
 - The workflow will check the ET schedule stored in `AutomationSetting`
 - When the time window is reached, the workflow will run the full daily pipeline directly on the GitHub runner
 - You can change the schedule later from `/admin?tab=automation`
@@ -144,5 +144,5 @@ The GitHub token should have permission to dispatch workflows for this repositor
 
 - Manual trigger: `/admin` -> `Automation` tab -> `Run daily pipeline now`
 - Manual trigger implementation: dispatches the GitHub Actions pipeline workflow
-- Scheduled trigger implementation: GitHub Actions every 5 minutes running `scripts/run-scheduled-pipeline.ts`
+- Scheduled trigger implementation: GitHub Actions every hour running `scripts/run-scheduled-pipeline.ts`
 - Runtime schedule source of truth: `AutomationSetting` in the database, editable from `/admin?tab=automation`

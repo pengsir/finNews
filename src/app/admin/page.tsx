@@ -349,7 +349,7 @@ export default async function AdminDashboardPage({
 
                 <div className="admin-toolbar-actions">
                   <div className="admin-toolbar-note">
-                    <strong>Schedule:</strong> checked every 5 minutes, runs at {formatScheduleLabel(automationSetting.scheduleHourEt, automationSetting.scheduleMinuteEt)}
+                    <strong>Schedule:</strong> checked every hour, runs at {formatScheduleLabel(automationSetting.scheduleHourEt, automationSetting.scheduleMinuteEt)}
                   </div>
                   {isAutomationBusy ? (
                     <form action={clearRunningPipelineJobAction}>

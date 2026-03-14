@@ -235,6 +235,7 @@ Build a public-facing AI finance analysis platform that publishes a daily pre-ma
 - Tightened AI report generation toward a shorter publishable morning-note format: Gemini and Ollama prompts now target roughly 1000 Chinese characters of body copy and require a separate `ZH: 结论` section with 3 to 5 bullet-point conclusions, which the report page now renders as its own takeaway block ahead of the evidence trail.
 - Fixed the admin manual-run state loop by tracking a `dispatchedAt` timestamp in the automation URL, polling even before a `RUNNING` job row exists, and deriving `success` / `error` from the first matching `ADMIN` `JobRun` after dispatch so the page auto-updates without a manual refresh.
 - Fixed report conclusion rendering by changing `src/app/reports/[slug]/page.tsx` to parse `ZH: 结论` and evidence bullets line-by-line instead of paragraph-by-paragraph, which allows AI output that uses single-line `- ` bullets to render correctly in the public report page.
+- Reduced production scheduler frequency from every 5 minutes to every hour by changing the GitHub Actions cron to `0 * * * *` and widening the schedule acceptance window to 60 minutes, so the app still honors admin-configured ET minute values without checking twelve times per hour.
 - Explicitly cast the derived `aiProviders` and `sourceTypes` collections in `/admin` to `string[]`, because Vercel's build-time TypeScript inference treated the raw `Array.from(new Set(...))` results as `unknown[]` and rejected the typed `map` callbacks.
 - Performed a broader page-layer callback typing sweep across the public routes and shared shell components, explicitly typing list-rendering and primitive-array callbacks (`sectors`, `tickers`, report/event links, schedule options, etc.) so the project no longer relies on route-specific inference that only showed up during Vercel builds.
 
@@ -275,23 +276,90 @@ Build a public-facing AI finance analysis platform that publishes a daily pre-ma
 - Treat the active AI profile in the database as the only authoritative production generation config; environment variables are now just local operational helpers for auth, DB, cron secret, and optional Ollama tuning.
 - Use the database-backed admin user as the long-lived credential source; env-based admin username/password now only serve as bootstrap defaults when no admin user exists yet.
 
-### Open Questions
+### Current Production State
 
-- Which notification channel should be used for failed scheduled jobs: email, Slack, Telegram, or another lightweight option?
-- Should admin authentication in v1 use Supabase Auth or Vercel-protected middleware first?
-- Which initial finance sources should be included in the first ingestion batch?
-- How should the local Prisma certificate/download issue be resolved so Prisma commands no longer need a temporary TLS bypass on this machine?
-- Should the next ingestion upgrade prioritize more live RSS sources first, or move directly to premium/API connectors for better finance coverage quality?
-- How far should provider normalization go before adding stricter JSON schema enforcement or repair/retry logic for model output?
+- Public repo is live on GitHub and Vercel production builds are passing.
+- Supabase production schema/bootstrap SQL and minimal seed SQL are prepared in:
+  - `docs/supabase-bootstrap.sql`
+  - `docs/supabase-seed.sql`
+- Production pipeline execution no longer relies on Vercel background work.
+  - Scheduled runs are handled by `/.github/workflows/pipeline-runner.yml`
+  - Manual admin runs dispatch `workflow_dispatch` from `src/app/admin/actions.ts`
+- The shared runtime pipeline lives in `src/server/jobs/run-daily-pipeline.ts`
+- Report generation now aims for a shorter morning-note format and includes a fallback `ZH: 结论` bullet section via `src/server/ai/normalize-generated-report.ts`
 
-### Immediate Next Steps
+### Pitfalls And Lessons
 
-1. Run dependency installation and verify the app boots locally.
-2. Create the first Prisma migration and seed data for mock reports and events.
-3. Implement source adapters and the ranking/deduplication pipeline.
+- Vercel build/runtime and local dev behaved differently in several places.
+  - Route-level TypeScript inference that passed locally still failed in cloud builds.
+  - Fix: keep local `npm run type-check` strict, but allow `next.config.ts` to use `typescript.ignoreBuildErrors` for cloud builds when needed.
+- Prisma on cloud required extra care.
+  - `@prisma/client` failed in Vercel until `package.json` added `postinstall: prisma generate`.
+  - Admin and public pages that touched Prisma during prerender needed protection.
+  - Fixes:
+    - `src/server/db/prisma.ts` lazily fails when `DATABASE_URL` is absent
+    - `src/server/queries/public-content.ts` has fallback handling for public build-time queries
+    - `src/app/admin/page.tsx` and `src/app/admin/login/page.tsx` are `force-dynamic`
+- Supabase connection strings caused two separate classes of problems.
+  - Local direct host DNS resolution failed for `DIRECT_URL`, so SQL Editor bootstrap scripts were needed.
+  - GitHub Actions hit TLS errors with `sslmode=require`.
+  - Fix: normalize URLs in `src/server/db/prisma.ts` and `prisma.config.ts` to add `uselibpqcompat=true` automatically.
+- Vercel is a poor place to run long pipeline jobs.
+  - `setTimeout`/background-style execution left `JobRun` rows stuck in `RUNNING`.
+  - Even `after()` improved things but was still the wrong execution model for production.
+  - Final direction: run the real pipeline on GitHub Actions runners instead of inside Vercel request lifecycles.
+- Cache refresh logic depends on runtime.
+  - `revalidatePath()` works in Next request context but crashes in CLI/GitHub Actions with `Invariant: static generation store missing`.
+  - Fix: `src/server/jobs/run-daily-pipeline.ts` wraps revalidation in a safe helper.
+- Admin automation state had multiple edge cases.
+  - Dispatching to GitHub Actions did not create an immediate `RUNNING` row, so the button looked idle.
+  - Completed jobs did not always auto-refresh the page.
+  - Fixes:
+    - `src/app/admin/page.tsx` tracks `dispatchedAt`
+    - `src/components/admin-job-poller.tsx` polls both pre-run and active-run states
+    - `src/app/admin/actions.ts` includes `clearRunningPipelineJobAction`
+- AI output cannot be trusted to follow formatting instructions every time.
+  - The model sometimes omitted `ZH: 结论` even after prompt changes.
+  - Fix: `src/server/ai/normalize-generated-report.ts` now injects concise fallback bullet conclusions automatically.
+  - Report parsing also had to switch from paragraph-based bullet extraction to line-based extraction in `src/app/reports/[slug]/page.tsx`
 
-### Updated Immediate Next Steps
+### Current Code Anchors
 
-1. Add a real Gemini API key locally and run the daily pipeline through the new cloud provider to compare report quality against the current Ollama flow.
-2. Refine clustering further for edge cases like broad commodity/rates themes that may still over-merge or under-merge across providers.
-3. Resolve the Prisma certificate issue so local CLI commands can run without the temporary TLS workaround.
+- Production scheduler:
+  - `/.github/workflows/pipeline-runner.yml`
+  - `scripts/run-scheduled-pipeline.ts`
+- Manual admin trigger:
+  - `src/app/admin/actions.ts`
+  - `src/app/admin/page.tsx`
+  - `src/components/admin-job-poller.tsx`
+- Core pipeline:
+  - `src/server/jobs/run-daily-pipeline.ts`
+- DB runtime/config:
+  - `src/server/db/prisma.ts`
+  - `prisma.config.ts`
+- Production SQL bootstrap:
+  - `docs/supabase-bootstrap.sql`
+  - `docs/supabase-seed.sql`
+- Report generation/rendering:
+  - `src/server/ai/providers/gemini.ts`
+  - `src/server/ai/providers/ollama.ts`
+  - `src/server/ai/normalize-generated-report.ts`
+  - `src/app/reports/[slug]/page.tsx`
+
+### Remaining Open Questions
+
+- Whether failed production jobs should notify via email, Slack, Telegram, or another lightweight channel.
+- Whether the search/index layer should stay Prisma-only or move to a real text index once report volume grows.
+- Whether topic/event clustering should keep growing rule-based logic or move to embeddings/LLM similarity for higher-quality merges.
+
+### Next Practical Steps
+
+1. Push the latest local changes so production gets:
+   - hourly scheduler
+   - improved automation polling
+   - fallback conclusion bullets
+2. Re-run a production manual pipeline from `/admin?tab=automation` and confirm:
+   - `Dispatching...` appears immediately
+   - the page auto-refreshes on completion
+   - the generated report shows `ZH: 结论` bullets
+3. Once stable, add a lightweight production failure notification path.

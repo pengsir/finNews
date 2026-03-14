@@ -65,7 +65,7 @@ CRON_SECRET=<same-as-vercel>
 ```
 
 The workflow:
-- runs every 5 minutes
+- runs every hour
 - calls the protected cron route
 - lets the app decide whether the configured ET schedule window has been reached
 

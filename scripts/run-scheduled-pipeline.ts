@@ -3,6 +3,8 @@ import { prisma } from "@/server/db/prisma";
 import { getDailyReportAutomationSetting } from "@/server/automation/settings";
 import { runDailyPipeline } from "@/server/jobs/run-daily-pipeline";
 
+const SCHEDULE_WINDOW_MINUTES = 60;
+
 function getEasternParts(date = new Date()) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/New_York",
@@ -41,7 +43,10 @@ async function main() {
     eastern.day
   ).padStart(2, "0")}`;
 
-  if (currentMinutes < scheduledMinutes || currentMinutes >= scheduledMinutes + 5) {
+  if (
+    currentMinutes < scheduledMinutes ||
+    currentMinutes >= scheduledMinutes + SCHEDULE_WINDOW_MINUTES
+  ) {
     console.log(
       JSON.stringify({
         ok: true,
