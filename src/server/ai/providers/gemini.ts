@@ -133,9 +133,10 @@ export class GeminiClient implements AiClient {
         "Return strict JSON only.",
         "You are writing a bilingual pre-market finance morning note.",
         "Required JSON keys: title, summary, contentZhEn, sentimentSummary, sectorView, tradingView, stockFocuses, riskWarning, disclaimer.",
-        "contentZhEn must include these exact section markers in order: 'EN: Morning Note', 'ZH: 盘前晨报', 'EN: Evidence trail used for this draft:'.",
+        "contentZhEn must include these exact section markers in order: 'EN: Morning Note', 'ZH: 盘前晨报', 'ZH: 结论', 'EN: Evidence trail used for this draft:'.",
         "The Chinese section should read like a professional morning column, not a bullet list or outline.",
-        "Target roughly 1800 to 2200 Chinese characters before the evidence trail.",
+        "Target roughly 900 to 1200 Chinese characters before the conclusions and evidence trail.",
+        "Under 'ZH: 结论', provide 3 to 5 short bullet lines starting with '- ' in a decisive, conclusion-style tone.",
         "Use only the provided events and sources.",
         "stockFocuses must be an array of at most 3 objects with keys symbol, company, thesis."
       ].join(" "),

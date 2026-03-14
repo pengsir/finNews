@@ -14,18 +14,37 @@ function parseReportContent(content: string) {
   const evidenceIndex = paragraphs.findIndex((paragraph) =>
     paragraph.startsWith("EN: Evidence trail used for this draft:")
   );
+  const conclusionIndex = paragraphs.findIndex((paragraph) =>
+    paragraph.startsWith("ZH: 结论")
+  );
 
-  if (evidenceIndex === -1) {
+  if (evidenceIndex === -1 && conclusionIndex === -1) {
     return {
       narrative: paragraphs,
+      conclusionLines: [],
       evidenceLines: []
     };
   }
 
+  const narrativeEnd =
+    conclusionIndex !== -1
+      ? conclusionIndex
+      : evidenceIndex !== -1
+        ? evidenceIndex
+        : paragraphs.length;
+  const evidenceStart = evidenceIndex !== -1 ? evidenceIndex + 1 : paragraphs.length;
+  const conclusionLines =
+    conclusionIndex === -1
+      ? []
+      : paragraphs
+          .slice(conclusionIndex + 1, evidenceIndex === -1 ? paragraphs.length : evidenceIndex)
+          .filter((paragraph: string) => paragraph.startsWith("- "));
+
   return {
-    narrative: paragraphs.slice(0, evidenceIndex),
+    narrative: paragraphs.slice(0, narrativeEnd),
+    conclusionLines,
     evidenceLines: paragraphs
-      .slice(evidenceIndex + 1)
+      .slice(evidenceStart)
       .filter((paragraph: string) => paragraph.startsWith("- "))
   };
 }
@@ -127,6 +146,22 @@ export default async function ReportPage({ params }: ReportPageProps) {
           </aside>
         </div>
       </section>
+
+      {parsedContent.evidenceLines.length > 0 ? (
+        <section className="section-block">
+          <div className="section-heading">
+            <p className="eyebrow">Conclusion</p>
+            <h2>Desk takeaways from the morning note.</h2>
+          </div>
+          <div className="stack-list">
+            {parsedContent.conclusionLines.map((line: string) => (
+              <article className="evidence-line-card" key={line}>
+                <p>{line.replace(/^- /, "")}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {parsedContent.evidenceLines.length > 0 ? (
         <section className="section-block">

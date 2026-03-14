@@ -58,11 +58,15 @@ function extractJsonText(value: string) {
 function needsEditorialRewrite(content: string) {
   const trimmed = content.trim();
 
-  if (trimmed.length < 1800) {
+  if (trimmed.length < 900) {
     return true;
   }
 
-  return /(^|\n)\s*(#{1,6}\s|[-*]\s|\d+\.\s)/.test(trimmed);
+  if (!trimmed.includes("ZH: 结论")) {
+    return true;
+  }
+
+  return /(^|\n)\s*(#{1,6}\s|\d+\.\s)/.test(trimmed);
 }
 
 export class OllamaClient implements AiClient {
@@ -167,9 +171,11 @@ export class OllamaClient implements AiClient {
         "The output must include these exact section markers in this order:",
         "EN: Morning Note",
         "ZH: 盘前晨报",
+        "ZH: 结论",
         "EN: Evidence trail used for this draft:",
-        "Target roughly 1800 to 2200 Chinese characters before the evidence trail.",
-        "Write in full paragraphs, not bullets, not markdown headings, not numbered lists, and no separators like '---'.",
+        "Target roughly 900 to 1200 Chinese characters before the conclusions and evidence trail.",
+        "Write the main article in full paragraphs, not markdown headings, not numbered lists, and no separators like '---'.",
+        "Under 'ZH: 结论', provide 3 to 5 bullet lines starting with '- ' in a decisive conclusion-style tone.",
         "Use a calm editorial morning-note voice with natural transitions and fewer templates.",
         "Keep the English section concise and place most of the detail in the Chinese section.",
         "Preserve factual grounding in the provided event block and draft. Do not invent new facts."
@@ -220,6 +226,10 @@ export class OllamaClient implements AiClient {
     ].filter(Boolean);
 
     const evidenceLines = [
+      `ZH: 结论`,
+      `- 市场当前仍以主线确认而非全面扩张为主，盘中应优先跟踪最强板块与龙头反馈。`,
+      `- 成长、能源与宏观敏感资产之间的轮动决定今天的风险偏好方向。`,
+      `- 若核心高弹性标的无法快速企稳，指数层面的反弹持续性也会受到质疑。`,
       `EN: Evidence trail used for this draft:`,
       ...topEvents.flatMap((event) =>
         event.sources.slice(0, 2).map((source) => `- ${source.sourceName}: ${source.title}`)
@@ -272,16 +282,18 @@ export class OllamaClient implements AiClient {
         "contentZhEn must be plain text, not markdown headings, and must include these exact section markers in order:",
         "EN: Morning Note",
         "ZH: 盘前晨报",
+        "ZH: 结论",
         "EN: Evidence trail used for this draft:",
-        "The Chinese section should read like a professional market morning note written by an editor, not a template, outline, or bullet list.",
-        "Target roughly 1800 to 2200 Chinese characters before the evidence trail.",
-        "Use 8 to 12 connected paragraphs overall, with smoother transitions and less repetitive sentence structure.",
+        "The Chinese section should read like a professional market morning note written by an editor, not a template or outline.",
+        "Target roughly 900 to 1200 Chinese characters before the conclusions and evidence trail.",
+        "Use 5 to 7 connected paragraphs overall, with smoother transitions and less repetitive sentence structure.",
         "Cover these ideas naturally in prose: overnight market setup, the dominant macro theme, sector rotation, key tickers to watch, and what traders should monitor into the open.",
         "Keep the English section concise, with 2 to 3 short orienting paragraphs. Put the detail and depth mainly in the Chinese section.",
-        "Do not use markdown headings, bullets, numbered lists, separators like '---', or label-value formatting anywhere before the evidence trail.",
-        "Write full paragraphs only before the evidence trail, with natural editorial transitions between paragraphs.",
+        "Do not use markdown headings, numbered lists, separators like '---', or label-value formatting anywhere before the evidence trail.",
+        "Write full paragraphs only before the conclusions, with natural editorial transitions between paragraphs.",
         "Do not sound robotic, do not repeat the same clause pattern, and avoid generic filler like 'investors should pay attention' unless it adds specific context.",
         "Every point must remain grounded in the provided events and source snippets.",
+        "Under 'ZH: 结论', provide 3 to 5 short bullet lines starting with '- ' and use a decisive, conclusion-oriented tone.",
         "After the Chinese section, add the evidence trail section with lines starting '- ' and include the source name plus source title on each line.",
         "stockFocuses must be an array of at most 3 objects with keys symbol, company, thesis.",
         "Use only the provided events and source snippets."
